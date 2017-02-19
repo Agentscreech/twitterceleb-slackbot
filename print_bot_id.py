@@ -1,7 +1,7 @@
 import os
 from slackclient import SlackClient
 
-BOT_NAME = 'starterbot'
+BOT_NAME = 'celebbot'
 
 slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
 
@@ -13,5 +13,6 @@ if __name__ == "__main__":
         for user in users:
             if "name" in user and user.get('name') == BOT_NAME:
                 print("Bot ID of '"+user['name']+"' is "+user.get('id'))
+                os.environ["BOT_ID"] = user.get('id')
         else:
             print("could not find bot user with the name " + BOT_NAME)
