@@ -32,21 +32,20 @@ def get_celeb(username, channel):
     global tweets
     global last_celeb_time
     last_celeb_time = time.time()
-    print('building responses')
     try:
         responses = tweepy.Cursor(api.user_timeline, id=username).items()
+        for response in responses:
+            if "http" or "RT" not in response:
+                tweets.append(response.text)
+        print('built up '+str(len(tweets))+' tweets')
+        if len(tweets) > 1:
+            slack_client.api_call("chat.postMessage", channel=channel, text='Ok, I was able to get @'+username+'.  I will now be replying on behalf of them.', as_user=True)
+        else:
+            slack_client.api_call("chat.postMessage", channel=channel, text='¯\\_(ツ)_/¯, I am not sure I know @'+username+' or they do not have anything to say', as_user=True)
     except tweepy.TweepError:
         last_celeb_time = 0
-        slack_client.api_call("chat.postMessage", channel=channel, text='¯\\_(ツ)_/¯, not sure I know @'+username, as_user=True)
-    for response in responses:
-        if 'http' or 'RT' not in response.text:
-            tweets.append(response.text)
-    print('built up '+str(len(tweets))+' tweets')
+        slack_client.api_call("chat.postMessage", channel=channel, text='¯\\_(ツ)_/¯, looks like @'+username+'is not available', as_user=True)
 
-    if len(tweets) > 1:
-        slack_client.api_call("chat.postMessage", channel=channel, text='Ok, I was able to get @'+username, as_user=True)
-    else:
-        slack_client.api_call("chat.postMessage", channel=channel, text='¯\\_(ツ)_/¯, not sure I know @'+username, as_user=True)
 
 
 def handle_command(command, channel):
@@ -58,7 +57,6 @@ def handle_command(command, channel):
     response = False
     if tweets:
         response = random.choice(tweets)
-
     if command.startswith(SLASH_COMMAND):
         timer = time.time() - last_celeb_time
         if timer > 60:
