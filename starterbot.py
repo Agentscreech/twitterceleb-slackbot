@@ -95,6 +95,10 @@ if __name__ == "__main__":
     api_call = slack_client.api_call('users.list')
     if api_call.get('ok'):
         # retrieve all users so we can find our bot
+        channel_list = slack_client.api_call('channels.list', exclude_archived=1)
+        for channel in channel_list['channels']:
+            if channel['is_member'] == True:
+                channel_in = channel['id']
         users = api_call.get('members')
         for user in users:
             if "name" in user and user.get('name') == BOT_NAME:
@@ -104,7 +108,7 @@ if __name__ == "__main__":
     READ_WEBSOCKET_DELAY = 1 # 1 second delay between reading from firehose
     if slack_client.rtm_connect() and BOT_ID:
         print("StarterBot connected and running!")
-        slack_client.api_call("chat.postMessage", channel='general', text="CelebBot running, type chatwith <celeb twitterhandle here. ex: @twitter> to chat with that celeb.  This can only happen once a minute", as_user=True)
+        slack_client.api_call("chat.postMessage", channel=channel_in, text="CelebBot running, type chatwith <celeb twitterhandle here. ex: @twitter> to chat with that celeb.  This can only happen once a minute", as_user=True)
         while True:
             command, channel = parse_slack_output(slack_client.rtm_read())
             if command and channel:

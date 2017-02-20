@@ -10,9 +10,10 @@ if __name__ == "__main__":
     if api_call.get('ok'):
         # retrieve all users so we can find our bot
         users = api_call.get('members')
+        channel_list = slack_client.api_call('channels.list', exclude_archived=1)
+        for channel in channel_list['channels']:
+            if channel['is_member'] == True:
+                print (channel['id'])
         for user in users:
             if "name" in user and user.get('name') == BOT_NAME:
                 print("Bot ID of '"+user['name']+"' is "+user.get('id'))
-                os.environ["BOT_ID"] = user.get('id')
-        else:
-            print("could not find bot user with the name " + BOT_NAME)
