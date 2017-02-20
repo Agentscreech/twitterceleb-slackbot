@@ -28,15 +28,20 @@ last_celeb_time = False
 slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
 
 def get_celeb(username, channel):
-    slack_client.api_call("chat.postMessage", channel=channel, text="Hang on, let me get them.", as_user=True)
+    if username.lower() == 'realdonaldtrump':
+        slack_client.api_call("chat.postMessage", channel=channel, text="Oh, is that what we are doing today? Arguing? Fine.  Going to the alternate reality where he lives.  Pray for me.", as_user=True)
+    else:
+        slack_client.api_call("chat.postMessage", channel=channel, text="Hang on, let me get them.", as_user=True)
     global tweets
+    tweets = []
     global last_celeb_time
     last_celeb_time = time.time()
     try:
         responses = tweepy.Cursor(api.user_timeline, id=username).items()
         for response in responses:
-            if "http" or "RT" not in response:
-                tweets.append(response.text)
+            if "http" not in response.text:
+                if "RT" not in response.text:
+                    tweets.append(response.text)
         print('built up '+str(len(tweets))+' tweets')
         if len(tweets) > 1:
             slack_client.api_call("chat.postMessage", channel=channel, text='Ok, I was able to get @'+username+'.  I will now be replying on behalf of them.', as_user=True)
@@ -44,7 +49,7 @@ def get_celeb(username, channel):
             slack_client.api_call("chat.postMessage", channel=channel, text='¯\\_(ツ)_/¯, I am not sure I know @'+username+' or they do not have anything to say', as_user=True)
     except tweepy.TweepError:
         last_celeb_time = 0
-        slack_client.api_call("chat.postMessage", channel=channel, text='¯\\_(ツ)_/¯, looks like @'+username+'is not available', as_user=True)
+        slack_client.api_call("chat.postMessage", channel=channel, text='¯\\_(ツ)_/¯, looks like @'+username+' is not available', as_user=True)
 
 
 
@@ -61,11 +66,10 @@ def handle_command(command, channel):
         timer = time.time() - last_celeb_time
         if timer > 60:
             requested_celeb = command[10:]
-            print(requested_celeb)
+            print(requested_celeb+ ' requested')
             get_celeb(requested_celeb, channel)
         else:
             slack_client.api_call("chat.postMessage", channel=channel, text="Sorry, you have to wait "+str(60-timer)+" more seconds", as_user=True)
-    print(len(tweets))
     # response = "this is where an API return would be"
     # response = "Not sure what you mean. Use the *" + EXAMPLE_COMMAND + \
     #            "* command with numbers, delimited by spaces."
