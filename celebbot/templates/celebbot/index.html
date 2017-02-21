@@ -1,0 +1,11 @@
+{% extends 'celebbot/base.html' %}
+
+{% block content %}
+<h1>celebbot</h1>
+<form action="/" method="POST" enctype="multipart/form-data">
+  {% csrf_token %}
+  <input type="file" name="srt_file">
+    <input type="submit">
+  </form>
+  <pre>{{subtitles}}</pre>
+{% endblock %}
