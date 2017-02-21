@@ -24,6 +24,8 @@ BOT_NAME = 'celebbot'
 SLASH_COMMAND = "chatwith @"
 tweets = []
 last_celeb_time = False
+invoker = ""
+
 # instantiate Slack & Twilio clients
 slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
 
@@ -44,7 +46,7 @@ def get_celeb(username, channel):
                     tweets.append(response.text)
         print('built up '+str(len(tweets))+' tweets')
         if len(tweets) > 1:
-            slack_client.api_call("chat.postMessage", channel=channel, text='Ok, I was able to get @'+username+'.  I will now be replying on behalf of them.', as_user=True)
+            slack_client.api_call("chat.postMessage", channel=channel, text='Ok, I was able to get @'+username+'.  I will now be replying only to <@' +invoker+'> on behalf of them.', as_user=True)
         else:
             slack_client.api_call("chat.postMessage", channel=channel, text='¯\\_(ツ)_/¯, I am not sure I know @'+username+' or they do not have anything to say', as_user=True)
     except tweepy.TweepError:
@@ -53,24 +55,27 @@ def get_celeb(username, channel):
 
 
 
-def handle_command(command, channel):
+def handle_command(command, channel, user):
     """
         Receives commands directed at the bot and determines if they
         are valid commands. If so, then acts on the commands. If not,
         returns back what it needs for clarification.
     """
+    global invoker
     response = False
-    if tweets:
-        response = random.choice(tweets)
     if command.startswith(SLASH_COMMAND):
         timer = time.time() - last_celeb_time
         if timer > 60:
+            invoker = user
             requested_celeb = command[10:]
             print(requested_celeb+ ' requested')
             get_celeb(requested_celeb, channel)
         else:
-            slack_client.api_call("chat.postMessage", channel=channel, text="Sorry, you have to wait "+str(60-timer)+" more seconds", as_user=True)
+            slack_client.api_call("chat.postMessage", channel=channel, text="Sorry, you have to wait "+str(round(60-timer))+" more seconds", as_user=True)
     # response = "this is where an API return would be"
+    if tweets and invoker:
+        if not command.startswith("<@"):
+            response = random.choice(tweets);
     # response = "Not sure what you mean. Use the *" + EXAMPLE_COMMAND + \
     #            "* command with numbers, delimited by spaces."
     while response:
@@ -84,21 +89,20 @@ def parse_slack_output(slack_rtm_output):
         for output in output_list:
             print(output)
             if output and 'text' in output and 'user' in output and BOT_ID not in output['user']:
-                return output['text'], output['channel']
+                return output['text'], output['channel'], output['user']
             # if output and 'text' in output and AT_BOT in output['text']:
             #     # return text after the @ mention, whitespace removed
             #     return output['text'].split(AT_BOT)[1].strip().lower(), output['channel']
-    return None, None
+    return None, None, None
 
 
 if __name__ == "__main__":
     api_call = slack_client.api_call('users.list')
     if api_call.get('ok'):
         # retrieve all users so we can find our bot
-        channel_list = slack_client.api_call('channels.list', exclude_archived=1)
-        for channel in channel_list['channels']:
-            if channel['is_member'] == True:
-                channel_in = channel['id']
+        channel_list = slack_client.api_call('groups.list', exclude_archived=1)
+        for group in channel_list['groups']:
+            channel_in = group['id']
         users = api_call.get('members')
         for user in users:
             if "name" in user and user.get('name') == BOT_NAME:
@@ -106,13 +110,13 @@ if __name__ == "__main__":
                 BOT_ID = user.get('id')
 
     READ_WEBSOCKET_DELAY = 1 # 1 second delay between reading from firehose
-    if slack_client.rtm_connect() and BOT_ID:
+    if slack_client.rtm_connect() and BOT_ID and channel_in:
         print("StarterBot connected and running!")
         slack_client.api_call("chat.postMessage", channel=channel_in, text="CelebBot running, type chatwith <celeb twitterhandle here. ex: @twitter> to chat with that celeb.  This can only happen once a minute", as_user=True)
         while True:
-            command, channel = parse_slack_output(slack_client.rtm_read())
-            if command and channel:
-                handle_command(command, channel)
+            command, channel, user = parse_slack_output(slack_client.rtm_read())
+            if command and channel and user:
+                handle_command(command, channel, user)
             time.sleep(READ_WEBSOCKET_DELAY)
     else:
         print("Connection failed. Invalid Slack token or bot ID?")
