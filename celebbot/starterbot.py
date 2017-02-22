@@ -1,3 +1,4 @@
+from .interval import Interval
 import os
 import time
 from slackclient import SlackClient
@@ -6,10 +7,17 @@ import random
 import time
 
 
-consumer_key = os.environ.get("TWITTER_CONSUMER_KEY")
-consumer_secret = os.environ.get("TWITTER_CONSUMER_SECRET")
-key = os.environ.get('TWITTER_ACCESS_TOKEN')
-secret = os.environ.get('TWITTER_TOKEN_SECRET')
+# consumer_key = os.environ.get("TWITTER_CONSUMER_KEY")
+# consumer_secret = os.environ.get("TWITTER_CONSUMER_SECRET")
+# key = os.environ.get('TWITTER_ACCESS_TOKEN')
+# secret = os.environ.get('TWITTER_TOKEN_SECRET')
+
+
+consumer_key='9S4gwHns1sIy2yNtqHnMwZzQl'
+consumer_secret='9YeaJpOsePwmh6gRFHNEbiJZM8AR1rEzygXvdKFtPRhF4Hgk6C'
+key='61951906-Neykccipj1XeVnDOBO728pKPGpEkiSWFCRnW13O7C'
+secret='vR1oKXcJbXv96aa2oAPwy4DyVfVVdYgKMF5DvtiJ9fW19'
+slack_client=SlackClient('xoxb-143940793575-GIpsemkJLn0MPru4tgcuqwO9')
 
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(key, secret)
@@ -27,7 +35,30 @@ last_celeb_time = False
 invoker = ""
 
 # instantiate Slack & Twilio clients
-slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
+# slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
+
+def get_bot_info():
+    channel_in = ""
+    api_call = slack_client.api_call('users.list')
+    if api_call.get('ok'):
+      # retrieve all users so we can find our bot
+      channel_list = slack_client.api_call('groups.list', exclude_archived=1)
+      for group in channel_list['groups']:
+          channel_in = group['id']
+          print('bot in channel/group',channel_in)
+      if not channel_in:
+        channel_list = slack_client.api_call('channels.list', exclude_archived=1)
+        for channel in channel_list['channels']:
+          if channel['is_member']:
+            channel_in = channel['id']
+      print('bot in channel ', channel_in)
+      users = api_call.get('members')
+      for user in users:
+          if "name" in user and user.get('name') == BOT_NAME:
+              print("Bot ID of '"+user['name']+"' is "+user.get('id'))
+              BOT_ID = user.get('id')
+    return BOT_ID, channel_in
+
 
 def get_celeb(username, channel):
     if username.lower() == 'realdonaldtrump':
@@ -83,7 +114,7 @@ def handle_command(command, channel, user):
         response = False
 
 
-def parse_slack_output(slack_rtm_output):
+def parse_slack_output(slack_rtm_output, BOT_ID):
     output_list = slack_rtm_output
     if output_list and len(output_list) > 0:
         for output in output_list:
@@ -96,27 +127,17 @@ def parse_slack_output(slack_rtm_output):
     return None, None, None
 
 
-if __name__ == "__main__":
-    api_call = slack_client.api_call('users.list')
-    if api_call.get('ok'):
-        # retrieve all users so we can find our bot
-        channel_list = slack_client.api_call('groups.list', exclude_archived=1)
-        for group in channel_list['groups']:
-            channel_in = group['id']
-        users = api_call.get('members')
-        for user in users:
-            if "name" in user and user.get('name') == BOT_NAME:
-                print("Bot ID of '"+user['name']+"' is "+user.get('id'))
-                BOT_ID = user.get('id')
-
-    READ_WEBSOCKET_DELAY = 1 # 1 second delay between reading from firehose
-    if slack_client.rtm_connect() and BOT_ID and channel_in:
-        print("StarterBot connected and running!")
-        slack_client.api_call("chat.postMessage", channel=channel_in, text="CelebBot running, type chatwith <celeb twitterhandle here. ex: @twitter> to chat with that celeb.  This can only happen once a minute", as_user=True)
-        while True:
-            command, channel, user = parse_slack_output(slack_client.rtm_read())
-            if command and channel and user:
-                handle_command(command, channel, user)
-            time.sleep(READ_WEBSOCKET_DELAY)
-    else:
-        print("Connection failed. Invalid Slack token or bot ID?")
+# if __name__ == "__main__":
+#     BOT_ID, channel_in = get_bot_info()
+#     READ_WEBSOCKET_DELAY = 1 # 1 second delay between reading from firehose
+#     if slack_client.rtm_connect() and BOT_ID and channel_in:
+#         print("StarterBot connected and running!")
+#         slack_client.api_call("chat.postMessage", channel=channel_in, text="CelebBot running, type chatwith <celeb twitterhandle here. ex: @twitter> to chat with that celeb.  This can only happen once a minute", as_user=True)
+#         def check_socket():
+#             command, channel, user = parse_slack_output(slack_client.rtm_read())
+#             if command and channel and user:
+#                 handle_command(command, channel, user)
+#             time.sleep(READ_WEBSOCKET_DELAY)
+#         tick = Interval(check_socket)
+#     else:
+#         print("Connection failed. Invalid Slack token or bot ID?")

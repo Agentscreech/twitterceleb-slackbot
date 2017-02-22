@@ -76,7 +76,7 @@ WSGI_APPLICATION = 'celebbotsite.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.db.backends.dummy',
         'NAME': 'celebbot',
         'HOST': 'localhost'
     }
