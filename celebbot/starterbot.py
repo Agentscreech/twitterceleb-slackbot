@@ -5,7 +5,7 @@ from slackclient import SlackClient
 import tweepy
 import random
 import time
-
+import keys
 
 # consumer_key = os.environ.get("TWITTER_CONSUMER_KEY")
 # consumer_secret = os.environ.get("TWITTER_CONSUMER_SECRET")
@@ -13,11 +13,7 @@ import time
 # secret = os.environ.get('TWITTER_TOKEN_SECRET')
 
 
-consumer_key='9S4gwHns1sIy2yNtqHnMwZzQl'
-consumer_secret='9YeaJpOsePwmh6gRFHNEbiJZM8AR1rEzygXvdKFtPRhF4Hgk6C'
-key='61951906-Neykccipj1XeVnDOBO728pKPGpEkiSWFCRnW13O7C'
-secret='vR1oKXcJbXv96aa2oAPwy4DyVfVVdYgKMF5DvtiJ9fW19'
-slack_client=SlackClient('xoxb-143940793575-GIpsemkJLn0MPru4tgcuqwO9')
+
 
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(key, secret)

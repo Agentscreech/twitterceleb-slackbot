@@ -2,8 +2,7 @@ from django.shortcuts import render, redirect
 from celebbot.starterbot import *
 import json
 from pymongo import MongoClient
-import datetime
-import pprint
+
 
 #mongodb stuff
 
