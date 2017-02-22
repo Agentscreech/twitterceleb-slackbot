@@ -5,14 +5,14 @@ from slackclient import SlackClient
 import tweepy
 import random
 import time
-import keys
+from .keys import *
 
 # consumer_key = os.environ.get("TWITTER_CONSUMER_KEY")
 # consumer_secret = os.environ.get("TWITTER_CONSUMER_SECRET")
 # key = os.environ.get('TWITTER_ACCESS_TOKEN')
 # secret = os.environ.get('TWITTER_TOKEN_SECRET')
 
-
+slack_client=SlackClient(slack_key)
 
 
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
