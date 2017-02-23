@@ -19,10 +19,10 @@
     {{create_message}}
 </div>
 <div class="col-xs-4 well pull-right">
-    <form class="form-group" action="/bot/add_bot" method="GET">
+    <form class="form-group" action="/bot/get_bot" method="GET">
         <label for="bot_name">Name of your bot:</label><input type="text" class="form-control" name="bot_name" value="" required>
         <input type="submit" class="btn btn-primary pull-right" name="" value="Get Bot">
     </form>
-
+    {{get_message}}
 </div>
 {%endblock%}

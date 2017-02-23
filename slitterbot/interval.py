@@ -4,9 +4,10 @@ mongo = MongoClient()
 db = mongo.bot_database
 
 class Interval():
-    def __init__(self, func, sec=1):
+    def __init__(self, func, bot, sec=1):
         def func_wrapper():
-            if db.is_running.count() == 1:
+            status = db.bot_database.find_one({'name':bot})
+            if status['bot_running']:
                 self.t = threading.Timer(sec, func_wrapper)
                 self.t.start()
                 print('doing interval')

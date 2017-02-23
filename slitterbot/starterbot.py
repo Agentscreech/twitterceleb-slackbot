@@ -37,9 +37,7 @@ invoker = ""
 # slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
 
 def get_bot_info(BOT_NAME, slack_token):
-    test = db.bot_database.find_one({'name': BOT_NAME})
-    print(test.slack_token)
-    slack_client=SlackClient(test.slack_token)
+    slack_client=SlackClient(slack_token)
     channel_in = ""
     api_call = slack_client.api_call('users.list')
     if api_call.get('ok'):
@@ -62,7 +60,7 @@ def get_bot_info(BOT_NAME, slack_token):
     return BOT_ID, channel_in
 
 
-def get_celeb(username, channel):
+def get_celeb(username, channel,slack_client):
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     api = tweepy.API(auth)
     if username.lower() == 'realdonaldtrump':
@@ -90,7 +88,7 @@ def get_celeb(username, channel):
 
 
 
-def handle_command(command, channel, user):
+def handle_command(command, channel, user,slack_client):
     """
         Receives commands directed at the bot and determines if they
         are valid commands. If so, then acts on the commands. If not,
@@ -104,7 +102,7 @@ def handle_command(command, channel, user):
             invoker = user
             requested_celeb = command[10:]
             print(requested_celeb+ ' requested')
-            get_celeb(requested_celeb, channel)
+            get_celeb(requested_celeb, channel, slack_client)
         else:
             slack_client.api_call("chat.postMessage", channel=channel, text="Sorry, you have to wait "+str(round(60-timer))+" more seconds", as_user=True)
     # response = "this is where an API return would be"

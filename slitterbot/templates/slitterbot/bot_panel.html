@@ -4,7 +4,7 @@
 
 <div class="col-xs-12">
     <h1>BOT PANEL FOR {{bot_name}}</h1>
-    {% if bot %}
+    {% if is_running %}
     <div class="">
         <form class="form-group" action="/" method="post">
             {% csrf_token %}

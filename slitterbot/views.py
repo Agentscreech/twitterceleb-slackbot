@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from slitterbot.starterbot import *
 import json
 from pymongo import MongoClient
+from pymongo import ReturnDocument
 # from .twitter_auth import auth_twitter
 from django.http import *
 
@@ -18,35 +19,41 @@ def index(request):
     return render(request, 'slitterbot/index.html')
   if request.method == "POST":
       if 'start_bot' in request.POST:
-        is_running = start_bot(request.POST['bot_name'])
+        bot = start_bot(request.POST['start_bot'])
       elif 'stop_bot' in request.POST:
-        is_running = stop_bot(request.POST['bot_name'])
+        print('stopping', request.POST['stop_bot'])
+        bot = stop_bot(request.POST['stop_bot'])
+      print(bot)
       context = {
-        'bot': is_running
+        'bot_name': bot['name'],
+        'is_running': bot['bot_running']
       }
-      return render(request, 'slitterbot/add_bot.html',context)
+      return render(request, 'slitterbot/bot_panel.html',context)
 
 
 def start_bot(bot_name):
-  BOT_ID, channel_in = get_bot_info(bot_name)
+  bot = db.bot_database.find_one({'name': bot_name})
+  slack_client=SlackClient(bot['slack_token'])
+  BOT_ID, channel_in = get_bot_info(bot_name, bot['slack_token'])
   if slack_client.rtm_connect() and BOT_ID and channel_in:
     print("SlitterBot connected and running!")
     slack_client.api_call("chat.postMessage", channel=channel_in, text="SlitterBot running, type chatwith <celeb twitterhandle here. ex: @twitter> to chat with that celeb.  This can only happen once a minute", as_user=True)
     def check_socket():
             command, channel, user = parse_slack_output(slack_client.rtm_read(), BOT_ID)
             if command and channel and user:
-                handle_command(command, channel, user)
-    is_running = db.bot_database.find_one_and_update({'name': bot_name},{"$set":{'bot_running': True}}, return_document=ReturnDocument.AFTER)
-    Interval(check_socket)
+                handle_command(command, channel, user, slack_client)
+    bot = db.bot_database.find_one_and_update({'name': bot_name},{"$set":{'bot_running': True}}, return_document=ReturnDocument.AFTER)
+    Interval(check_socket, bot['name'])
   else:
         print("Connection failed. Invalid Slack token or bot ID?")
-  return is_running
+  return bot
 
 def stop_bot(bot_name):
-  db.bot_database.find_one_and_update({'name': bot_name},{ "$set": {'bot_running': False}}, return_document=ReturnDocument.AFTER)
-  BOT_ID, channel_in = get_bot_info()
+  bot = db.bot_database.find_one_and_update({'name': bot_name},{ "$set": {'bot_running': False}}, return_document=ReturnDocument.AFTER)
+  slack_client=SlackClient(bot['slack_token'])
+  BOT_ID, channel_in = get_bot_info(bot['name'],bot['slack_token'])
   slack_client.api_call("chat.postMessage", channel=channel_in, text="SlitterBot powering down...", as_user=True)
-  return False
+  return bot
 
 def add_twitter(request):
   bot_name = request.GET['bot_name']
@@ -97,15 +104,13 @@ def add_bot(request):
     print(bot_name)
     return render(request, 'slitterbot/bot_panel.html',{'bot_name':bot_name})
 
-# def auth_twitter(request):
-#     auth = tweepy.OAuthHandler(consumer_key, consumer_secret, "http://localhost:8000/bot/add")
-#     try:
-#         redirect_url = auth.get_authorization_url()
-#     except tweepy.TweepError:
-#         print('Error! Failed to get rquest token')
-#     request.session['request_token'] = auth.request_token
-#     response = HttpResponseRedirect(redirect_url)
-#     return response
+def get_bot(request):
+    test = db.bot_database.find_one({'name': request.GET['bot_name']})
+    if test is None:
+      return render(request, 'slitterbot/index.html', {'get_message':"Bot not found"})
+    return render(request, 'slitterbot/bot_panel.html', {'bot_name':request.GET['bot_name']})
+
+
 
 
 def error(request):
