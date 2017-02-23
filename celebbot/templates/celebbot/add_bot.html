@@ -1,0 +1,29 @@
+{% extends 'celebbot/base.html' %}
+{%block content%}
+
+
+<div class="col-xs-12">
+    <h1>ADD BOT</h1>
+    {% if bot %}
+    <div class="">
+        <form class="form-group" action="/" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="stop_bot" value="{{bot}}">
+            <input type="submit" class="btn btn-danger" value="Stop Bot">
+        </form>
+    </div>
+    {% else %}
+    <div class="">
+        <form class="form-group" action="/" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="start_bot" value="true">
+            <input type="submit" class="btn btn-primary" value="Start Bot">
+        </form>
+    </div>
+    {% endif %}
+
+
+</div>
+
+
+{%endblock%}

@@ -15,9 +15,9 @@ from .keys import *
 slack_client=SlackClient(slack_key)
 
 
-auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-auth.set_access_token(key, secret)
-api = tweepy.API(auth)
+# auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+# # auth.set_access_token(key, secret)
+# api = tweepy.API(auth)
 
 # starterbot's ID as an environment variable
 # BOT_ID = os.environ.get("BOT_ID")
