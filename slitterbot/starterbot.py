@@ -6,14 +6,16 @@ import tweepy
 import random
 import time
 from .keys import *
-
+from pymongo import MongoClient
+mongo = MongoClient()
+db = mongo.bot_database
 
 # consumer_key = os.environ.get("TWITTER_CONSUMER_KEY")
 # consumer_secret = os.environ.get("TWITTER_CONSUMER_SECRET")
 # key = os.environ.get('TWITTER_ACCESS_TOKEN')
 # secret = os.environ.get('TWITTER_TOKEN_SECRET')
 
-slack_client=SlackClient(slack_key)
+# slack_client=SlackClient(slack_key)
 
 
 
@@ -25,7 +27,7 @@ slack_client=SlackClient(slack_key)
 
 # constants
 # AT_BOT = "<@" + BOT_ID + ">"
-BOT_NAME = 'celebbot'
+# BOT_NAME = 'slitterbot'
 SLASH_COMMAND = "chatwith @"
 tweets = []
 last_celeb_time = False
@@ -34,7 +36,10 @@ invoker = ""
 # instantiate Slack & Twilio clients
 # slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
 
-def get_bot_info():
+def get_bot_info(BOT_NAME, slack_token):
+    test = db.bot_database.find_one({'name': BOT_NAME})
+    print(test.slack_token)
+    slack_client=SlackClient(test.slack_token)
     channel_in = ""
     api_call = slack_client.api_call('users.list')
     if api_call.get('ok'):

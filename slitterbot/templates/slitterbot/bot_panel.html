@@ -1,14 +1,14 @@
-{% extends 'celebbot/base.html' %}
+{% extends 'slitterbot/base.html' %}
 {%block content%}
 
 
 <div class="col-xs-12">
-    <h1>ADD BOT</h1>
+    <h1>BOT PANEL FOR {{bot_name}}</h1>
     {% if bot %}
     <div class="">
         <form class="form-group" action="/" method="post">
             {% csrf_token %}
-            <input type="hidden" name="stop_bot" value="{{bot}}">
+            <input type="hidden" name="stop_bot" value="{{bot_name}}">
             <input type="submit" class="btn btn-danger" value="Stop Bot">
         </form>
     </div>
@@ -16,7 +16,7 @@
     <div class="">
         <form class="form-group" action="/" method="post">
             {% csrf_token %}
-            <input type="hidden" name="start_bot" value="true">
+            <input type="hidden" name="start_bot" value="{{bot_name}}">
             <input type="submit" class="btn btn-primary" value="Start Bot">
         </form>
     </div>

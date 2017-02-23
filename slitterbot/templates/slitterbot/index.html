@@ -1,0 +1,28 @@
+{% extends 'slitterbot/base.html' %}
+
+{% block content %}
+<div class="col-xs-12">
+    <h1>Slack Bot that lets you chat with Twitter</h1>
+    <p>To get this bot to run, you will need a <a target="_blank" href="https://twitter.com/">twitter account</a> and make a <a target="_blank" href="https://my.slack.com/services/new/bot">slack bot</a> in your team.</p>
+    <p>Just give your bot a name and hit "Add bot integration"  From there you will get an API Token.  Copy that long string starting with "xoxb-"</p>
+    <p>Once you have both of those, press "Add new Bot"</p>
+    <p>Already have a bot setup?  Fill in the name and press "Get Bot"</p>
+
+</div>
+<div class="col-xs-4 well">
+    <form class="form-group" action="/bot/add_twitter" method="GET">
+        <label for="bot_name">Name your bot:</label><input type="text" class="form-control" name="bot_name" value="" required>
+
+        <label for="slack_token">Slack Bot Token:</label><input type="text" name="slack_token" class="form-control" required>
+        <input type="submit" class="btn btn-primary pull-right" name="" value="Add Bot">
+    </form>
+    {{create_message}}
+</div>
+<div class="col-xs-4 well pull-right">
+    <form class="form-group" action="/bot/add_bot" method="GET">
+        <label for="bot_name">Name of your bot:</label><input type="text" class="form-control" name="bot_name" value="" required>
+        <input type="submit" class="btn btn-primary pull-right" name="" value="Get Bot">
+    </form>
+
+</div>
+{%endblock%}
