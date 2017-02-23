@@ -7,6 +7,7 @@ import random
 import time
 from .keys import *
 
+
 # consumer_key = os.environ.get("TWITTER_CONSUMER_KEY")
 # consumer_secret = os.environ.get("TWITTER_CONSUMER_SECRET")
 # key = os.environ.get('TWITTER_ACCESS_TOKEN')
@@ -15,9 +16,9 @@ from .keys import *
 slack_client=SlackClient(slack_key)
 
 
-# auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+
+
 # # auth.set_access_token(key, secret)
-# api = tweepy.API(auth)
 
 # starterbot's ID as an environment variable
 # BOT_ID = os.environ.get("BOT_ID")
@@ -57,6 +58,8 @@ def get_bot_info():
 
 
 def get_celeb(username, channel):
+    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+    api = tweepy.API(auth)
     if username.lower() == 'realdonaldtrump':
         slack_client.api_call("chat.postMessage", channel=channel, text="Oh, is that what we are doing today? Arguing? Fine.  Going to the alternate reality where he lives.  Pray for me.", as_user=True)
     else:

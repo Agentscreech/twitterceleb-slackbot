@@ -25,7 +25,7 @@ def index(request):
       context = {
         'bot': is_running
       }
-      return render(request, 'celebbot/index.html',context)
+      return render(request, 'celebbot/add_bot.html',context)
 
 
 def start_bot():
@@ -57,22 +57,21 @@ def add_twitter(request):
 
 def add_bot(request):
     if request.method == "GET":
-      print('request from twitter',request.GET["oauth_verifier"])
       oauth_token = request.GET['oauth_token']
-      print('oauth_token', oauth_token)
       oauth_verifier = request.GET['oauth_verifier']
-      print('oauth_verifier', oauth_verifier)
       if oauth_token is None:
         return render('celebbot/error.html')
       request_token = request.session.get('request_token')
-      print('request_token', request_token)
       if request_token is None:
         return render('celebbot/error.html')
       auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
       auth.request_token = request_token
-      print(auth.request_token)
       try:
           auth.get_access_token(oauth_verifier)
+          test_user = {'user':"test_user",
+          'access_token': auth.access_token,
+          'access_token_secret': auth.access_token_secret}
+          db.token.insert_one(test_user)
       except tweepy.TweepError:
           # Failed to get access token
           return render(request, 'celebbot/error.html')
