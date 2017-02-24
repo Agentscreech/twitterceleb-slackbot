@@ -8,7 +8,7 @@ import time
 # from .keys import *
 from pymongo import MongoClient
 from pymongo import ReturnDocument
-mongo = MongoClient()
+mongo = MongoClient(mongodb://heroku_p8hztrhs:hru1a2ec3uhghi3tag1225que3@ds161069.mlab.com:61069/heroku_p8hztrhs)
 db = mongo.bot_database
 
 # consumer_key = os.environ.get("TWITTER_CONSUMER_KEY")
