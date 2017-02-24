@@ -61,8 +61,7 @@ def get_celeb(username, channel,slack_client):
     tweets = []
     existing_users = db.twitter_users.find_one({'user':username})
     if existing_users is not None:
-        for users in existing_users:
-            if user == username:
+        if existing_users['user'] == username:
                 tweets = existing_users['tweets']
     if len(tweets) == 0:
         try:
@@ -93,27 +92,23 @@ def handle_command(command, channel,slack_client):
     """
     active_slack = db.slack_channel.find_one_and_update({'channel':channel}, {'$set':{'channel':channel}}, upsert=True,return_document=ReturnDocument.AFTER)
     response = False
-    print(active_slack)
     if 'celeb' in active_slack:
         active_user = db.twitter_users.find_one({'user':active_slack['celeb']})
         tweets = active_user['tweets']
     else:
         tweets = []
     if command.startswith(SLASH_COMMAND):
-        timer = 70
-        if timer > 60:
-            requested_celeb = command[11:]
-            if 'celeb' in active_slack:
-                if active_slack['celeb'] ==     requested_celeb:
-                    requested_celeb = db.twitter_users.find_one({'user':requested_celeb})
-                    tweets = requested_celeb['tweets']
-                    slack_client.api_call("chat.postMessage", channel=channel, text='Ok, I was able to get @'+requested_celeb['user']+'. Mention me and I will responed on behalf of them.', as_user=True)
+        print(command)
+        requested_celeb = command[11:]
+        if 'celeb' in active_slack:
+            if active_slack['celeb'] ==     requested_celeb:
+                requested_celeb = db.twitter_users.find_one({'user':requested_celeb})
+                tweets = requested_celeb['tweets']
+                slack_client.api_call("chat.postMessage", channel=channel, text='Ok, I was able to get @'+requested_celeb['user']+'. Mention me and I will responed on behalf of them.', as_user=True)
             else:
                 print(requested_celeb+ ' requested')
                 db.slack_channel.find_one_and_update({'channel':channel}, {"$set":{'celeb':requested_celeb,'last_celeb_time':time.time()}})
                 get_celeb(requested_celeb, channel, slack_client)
-        else:
-            slack_client.api_call("chat.postMessage", channel=channel, text="Sorry, you have to wait "+str(round(60-timer))+" more seconds", as_user=True)
 
     if tweets:
         response = random.choice(tweets);

@@ -35,7 +35,7 @@ def start_bot(bot_name):
   BOT_ID, channel_in = get_bot_info(bot_name, bot['slack_token'])
   if slack_client.rtm_connect() and BOT_ID and channel_in:
     print("SlitterBot connected and running!")
-    slack_client.api_call("chat.postMessage", channel=channel_in, text="SlitterBot running, type chatwith <celeb twitterhandle here. ex: @twitter> to chat with that celeb.  This can only happen once a minute", as_user=True)
+    slack_client.api_call("chat.postMessage", channel=channel_in, text=bot['name'] +" running, mention me and type chatwith <celeb twitterhandle here. ex: @"+bot['name']+" chatwith @twitter> to chat with that celeb.", as_user=True)
     def check_socket():
             command, channel = parse_slack_output(slack_client.rtm_read(), BOT_ID)
             if command and channel:
@@ -50,7 +50,7 @@ def stop_bot(bot_name):
   bot = db.bot_database.find_one_and_update({'name': bot_name},{ "$set": {'bot_running': False}}, return_document=ReturnDocument.AFTER)
   slack_client=SlackClient(bot['slack_token'])
   BOT_ID, channel_in = get_bot_info(bot['name'],bot['slack_token'])
-  slack_client.api_call("chat.postMessage", channel=channel_in, text="SlitterBot powering down...", as_user=True)
+  slack_client.api_call("chat.postMessage", channel=channel_in, text=bot['name'] +" powering down...", as_user=True)
   return bot
 
 def add_twitter(request):
