@@ -1,7 +1,7 @@
 import threading
 from pymongo import MongoClient
-mongo = MongoClient('mongodb://ds161069.mlab.com:61069/heroku_p8hztrhs')
-db = mongo.bot_database
+mongo = MongoClient('mongodb://dbuser:dbpassword@ds161069.mlab.com:61069/heroku_p8hztrhs')
+db = mongo.heroku_p8hztrhs
 
 class Interval():
     def __init__(self, func, bot, sec=1):

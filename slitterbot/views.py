@@ -9,8 +9,8 @@ from django.http import *
 
 #mongodb stuff
 
-mongo = MongoClient('mongodb://ds161069.mlab.com:61069/heroku_p8hztrhs')
-db = mongo.bot_database
+mongo = MongoClient('mongodb://dbuser:dbpassword@ds161069.mlab.com:61069/heroku_p8hztrhs')
+db = mongo.heroku_p8hztrhs
 
 # Create your views here.
 
