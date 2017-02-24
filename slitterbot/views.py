@@ -65,7 +65,7 @@ def add_twitter(request):
         try:
             redirect_url = auth.get_authorization_url()
         except tweepy.TweepError:
-            print('Error! Failed to get request token', TweepError)
+            print('Error! Failed to get request token', tweepy.TweepError)
         request.session['request_token'] = auth.request_token
         request.session['slack_token'] = request.GET['slack_token']
         request.session['bot_name'] = bot_name
