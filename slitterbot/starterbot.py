@@ -7,6 +7,7 @@ import random
 import time
 from .keys import *
 from pymongo import MongoClient
+from pymongo import ReturnDocument
 mongo = MongoClient()
 db = mongo.bot_database
 
@@ -28,10 +29,10 @@ db = mongo.bot_database
 # constants
 # AT_BOT = "<@" + BOT_ID + ">"
 # BOT_NAME = 'slitterbot'
-SLASH_COMMAND = "chatwith @"
-tweets = []
-last_celeb_time = False
-invoker = ""
+SLASH_COMMAND = " chatwith @"
+# tweets = []
+# last_celeb_time = False
+# invoker = ""
 
 # instantiate Slack & Twilio clients
 # slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
@@ -63,52 +64,64 @@ def get_bot_info(BOT_NAME, slack_token):
 def get_celeb(username, channel,slack_client):
     auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
     api = tweepy.API(auth)
+    #TODO still need to use the user's twitter token
     if username.lower() == 'realdonaldtrump':
         slack_client.api_call("chat.postMessage", channel=channel, text="Oh, is that what we are doing today? Arguing? Fine.  Going to the alternate reality where he lives.  Pray for me.", as_user=True)
     else:
         slack_client.api_call("chat.postMessage", channel=channel, text="Hang on, let me get them.", as_user=True)
-    global tweets
     tweets = []
-    global last_celeb_time
-    last_celeb_time = time.time()
-    try:
-        responses = tweepy.Cursor(api.user_timeline, id=username).items()
-        for response in responses:
-            if "http" not in response.text:
-                if "RT" not in response.text:
-                    tweets.append(response.text)
-        print('built up '+str(len(tweets))+' tweets')
-        if len(tweets) > 1:
-            slack_client.api_call("chat.postMessage", channel=channel, text='Ok, I was able to get @'+username+'.  I will now be replying only to <@' +invoker+'> on behalf of them.', as_user=True)
-        else:
-            slack_client.api_call("chat.postMessage", channel=channel, text='¯\\_(ツ)_/¯, I am not sure I know @'+username+' or they do not have anything to say', as_user=True)
-    except tweepy.TweepError:
-        last_celeb_time = 0
-        slack_client.api_call("chat.postMessage", channel=channel, text='¯\\_(ツ)_/¯, looks like @'+username+' is not available', as_user=True)
+    existing_users = db.twitter_users.find_one({'user':username})
+    for users in existing_users:
+        if user == username:
+            tweets = existing_users['tweets']
+    if len(tweets) == 0:
+        try:
+            responses = tweepy.Cursor(api.user_timeline, id=username).items()
+            for response in responses:
+                if "http" not in response.text:
+                    if "RT" not in response.text:
+                        tweets.append(response.text)
+            db.twitter_users.insert_one({'user':username,'tweets':tweets})
+            print('built up '+str(len(tweets))+' tweets')
+            if len(tweets) > 1:
+                slack_client.api_call("chat.postMessage", channel=channel, text='Ok, I was able to get @'+username+'. Mention me and I will responed on behalf of them.', as_user=True)
+            else:
+                slack_client.api_call("chat.postMessage", channel=channel, text='¯\\_(ツ)_/¯, I am not sure I know @'+username+' or they do not have anything to say', as_user=True)
+        except tweepy.TweepError:
+            last_celeb_time = 0
+            slack_client.api_call("chat.postMessage", channel=channel, text='¯\\_(ツ)_/¯, looks like @'+username+' is not available', as_user=True)
+    else:
+        slack_client.api_call("chat.postMessage", channel=channel, text='Ok, I was able to get @'+username+'. Mention me and I will responed on behalf of them.', as_user=True)
 
 
 
-def handle_command(command, channel, user,slack_client):
+def handle_command(command, channel,slack_client):
     """
         Receives commands directed at the bot and determines if they
         are valid commands. If so, then acts on the commands. If not,
         returns back what it needs for clarification.
     """
-    global invoker
+    active_slack = db.slack_channel.find_one_and_update({'channel':channel}, {'$set':{'channel':channel}}, upsert=True,return_document=ReturnDocument.AFTER)
     response = False
+    active_user = db.twitter_users.find_one({'user':active_slack['celeb']})
+    tweets = active_user['tweets']
     if command.startswith(SLASH_COMMAND):
-        timer = time.time() - last_celeb_time
+        timer = 70
         if timer > 60:
-            invoker = user
-            requested_celeb = command[10:]
-            print(requested_celeb+ ' requested')
-            get_celeb(requested_celeb, channel, slack_client)
+            requested_celeb = command[11:]
+            if active_slack['celeb'] == requested_celeb:
+                requested_celeb = db.twitter_users.find_one({'user':requested_celeb})
+                tweets = requested_celeb['tweets']
+                slack_client.api_call("chat.postMessage", channel=channel, text='Ok, I was able to get @'+requested_celeb['user']+'. Mention me and I will responed on behalf of them.', as_user=True)
+            else:
+                print(requested_celeb+ ' requested')
+                db.slack_channel.find_one_and_update({'channel':channel}, {"$set":{'celeb':requested_celeb,'last_celeb_time':time.time()}})
+                get_celeb(requested_celeb, channel, slack_client)
         else:
             slack_client.api_call("chat.postMessage", channel=channel, text="Sorry, you have to wait "+str(round(60-timer))+" more seconds", as_user=True)
-    # response = "this is where an API return would be"
-    if tweets and invoker:
-        if not command.startswith("<@"):
-            response = random.choice(tweets);
+
+    if tweets:
+        response = random.choice(tweets);
     # response = "Not sure what you mean. Use the *" + EXAMPLE_COMMAND + \
     #            "* command with numbers, delimited by spaces."
     while response:
@@ -122,11 +135,12 @@ def parse_slack_output(slack_rtm_output, BOT_ID):
         for output in output_list:
             print(output)
             if output and 'text' in output and 'user' in output and BOT_ID not in output['user']:
-                return output['text'], output['channel'], output['user']
+                AT_BOT = "<@" + BOT_ID + ">"
+                return output['text'].split(AT_BOT)[1], output['channel']
             # if output and 'text' in output and AT_BOT in output['text']:
             #     # return text after the @ mention, whitespace removed
             #     return output['text'].split(AT_BOT)[1].strip().lower(), output['channel']
-    return None, None, None
+    return None, None
 
 
 # if __name__ == "__main__":

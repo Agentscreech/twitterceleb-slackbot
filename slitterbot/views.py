@@ -21,9 +21,7 @@ def index(request):
       if 'start_bot' in request.POST:
         bot = start_bot(request.POST['start_bot'])
       elif 'stop_bot' in request.POST:
-        print('stopping', request.POST['stop_bot'])
         bot = stop_bot(request.POST['stop_bot'])
-      print(bot)
       context = {
         'bot_name': bot['name'],
         'is_running': bot['bot_running']
@@ -39,9 +37,9 @@ def start_bot(bot_name):
     print("SlitterBot connected and running!")
     slack_client.api_call("chat.postMessage", channel=channel_in, text="SlitterBot running, type chatwith <celeb twitterhandle here. ex: @twitter> to chat with that celeb.  This can only happen once a minute", as_user=True)
     def check_socket():
-            command, channel, user = parse_slack_output(slack_client.rtm_read(), BOT_ID)
-            if command and channel and user:
-                handle_command(command, channel, user, slack_client)
+            command, channel = parse_slack_output(slack_client.rtm_read(), BOT_ID)
+            if command and channel:
+                handle_command(command, channel, slack_client)
     bot = db.bot_database.find_one_and_update({'name': bot_name},{"$set":{'bot_running': True}}, return_document=ReturnDocument.AFTER)
     Interval(check_socket, bot['name'])
   else:
@@ -57,12 +55,7 @@ def stop_bot(bot_name):
 
 def add_twitter(request):
   bot_name = request.GET['bot_name']
-  print(bot_name, request.GET['slack_token'])
   bot_check = db.bot_database.find({'name':bot_name})
-  print(bot_check.count())
-  for item in bot_check:
-    print('trying to print',item)
-
   if bot_check.count() == 0:
         db.bot_database.insert_one({'name':bot_name,'slack_token':request.GET['slack_token']})
         auth = tweepy.OAuthHandler(consumer_key, consumer_secret, "http://localhost:8000/bot/add")
@@ -77,7 +70,7 @@ def add_twitter(request):
         return response
   else:
     context = {'create_message': 'That Bot already exists'}
-    return render(request, 'slitterbot/index.html',
+  return render(request, 'slitterbot/index.html',
     context)
 
 
@@ -101,7 +94,6 @@ def add_bot(request):
       except tweepy.TweepError:
           # Failed to get access token
           return render(request, 'slitterbot/error.html')
-    print(bot_name)
     return render(request, 'slitterbot/bot_panel.html',{'bot_name':bot_name})
 
 def get_bot(request):

@@ -10,7 +10,6 @@ class Interval():
             if status['bot_running']:
                 self.t = threading.Timer(sec, func_wrapper)
                 self.t.start()
-                print('doing interval')
                 func()
             else:
                 print('stopping interval')
