@@ -15,24 +15,13 @@ db = mongo.bot_database
 # consumer_secret = os.environ.get("TWITTER_CONSUMER_SECRET")
 # key = os.environ.get('TWITTER_ACCESS_TOKEN')
 # secret = os.environ.get('TWITTER_TOKEN_SECRET')
-
-# slack_client=SlackClient(slack_key)
-
-
-
-
 # # auth.set_access_token(key, secret)
 
 # starterbot's ID as an environment variable
 # BOT_ID = os.environ.get("BOT_ID")
 
 # constants
-# AT_BOT = "<@" + BOT_ID + ">"
-# BOT_NAME = 'slitterbot'
 SLASH_COMMAND = " chatwith @"
-# tweets = []
-# last_celeb_time = False
-# invoker = ""
 
 # instantiate Slack & Twilio clients
 # slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
@@ -71,9 +60,10 @@ def get_celeb(username, channel,slack_client):
         slack_client.api_call("chat.postMessage", channel=channel, text="Hang on, let me get them.", as_user=True)
     tweets = []
     existing_users = db.twitter_users.find_one({'user':username})
-    for users in existing_users:
-        if user == username:
-            tweets = existing_users['tweets']
+    if existing_users is not None:
+        for users in existing_users:
+            if user == username:
+                tweets = existing_users['tweets']
     if len(tweets) == 0:
         try:
             responses = tweepy.Cursor(api.user_timeline, id=username).items()
@@ -103,16 +93,21 @@ def handle_command(command, channel,slack_client):
     """
     active_slack = db.slack_channel.find_one_and_update({'channel':channel}, {'$set':{'channel':channel}}, upsert=True,return_document=ReturnDocument.AFTER)
     response = False
-    active_user = db.twitter_users.find_one({'user':active_slack['celeb']})
-    tweets = active_user['tweets']
+    print(active_slack)
+    if 'celeb' in active_slack:
+        active_user = db.twitter_users.find_one({'user':active_slack['celeb']})
+        tweets = active_user['tweets']
+    else:
+        tweets = []
     if command.startswith(SLASH_COMMAND):
         timer = 70
         if timer > 60:
             requested_celeb = command[11:]
-            if active_slack['celeb'] == requested_celeb:
-                requested_celeb = db.twitter_users.find_one({'user':requested_celeb})
-                tweets = requested_celeb['tweets']
-                slack_client.api_call("chat.postMessage", channel=channel, text='Ok, I was able to get @'+requested_celeb['user']+'. Mention me and I will responed on behalf of them.', as_user=True)
+            if 'celeb' in active_slack:
+                if active_slack['celeb'] ==     requested_celeb:
+                    requested_celeb = db.twitter_users.find_one({'user':requested_celeb})
+                    tweets = requested_celeb['tweets']
+                    slack_client.api_call("chat.postMessage", channel=channel, text='Ok, I was able to get @'+requested_celeb['user']+'. Mention me and I will responed on behalf of them.', as_user=True)
             else:
                 print(requested_celeb+ ' requested')
                 db.slack_channel.find_one_and_update({'channel':channel}, {"$set":{'celeb':requested_celeb,'last_celeb_time':time.time()}})
@@ -122,8 +117,6 @@ def handle_command(command, channel,slack_client):
 
     if tweets:
         response = random.choice(tweets);
-    # response = "Not sure what you mean. Use the *" + EXAMPLE_COMMAND + \
-    #            "* command with numbers, delimited by spaces."
     while response:
         slack_client.api_call("chat.postMessage", channel=channel, text=response, as_user=True)
         response = False
@@ -137,23 +130,7 @@ def parse_slack_output(slack_rtm_output, BOT_ID):
             if output and 'text' in output and 'user' in output and BOT_ID not in output['user']:
                 AT_BOT = "<@" + BOT_ID + ">"
                 return output['text'].split(AT_BOT)[1], output['channel']
-            # if output and 'text' in output and AT_BOT in output['text']:
-            #     # return text after the @ mention, whitespace removed
-            #     return output['text'].split(AT_BOT)[1].strip().lower(), output['channel']
     return None, None
 
 
 # if __name__ == "__main__":
-#     BOT_ID, channel_in = get_bot_info()
-#     READ_WEBSOCKET_DELAY = 1 # 1 second delay between reading from firehose
-#     if slack_client.rtm_connect() and BOT_ID and channel_in:
-#         print("StarterBot connected and running!")
-#         slack_client.api_call("chat.postMessage", channel=channel_in, text="CelebBot running, type chatwith <celeb twitterhandle here. ex: @twitter> to chat with that celeb.  This can only happen once a minute", as_user=True)
-#         def check_socket():
-#             command, channel, user = parse_slack_output(slack_client.rtm_read())
-#             if command and channel and user:
-#                 handle_command(command, channel, user)
-#             time.sleep(READ_WEBSOCKET_DELAY)
-#         tick = Interval(check_socket)
-#     else:
-#         print("Connection failed. Invalid Slack token or bot ID?")
