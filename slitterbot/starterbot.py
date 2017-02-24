@@ -5,7 +5,7 @@ from slackclient import SlackClient
 import tweepy
 import random
 import time
-from .keys import *
+# from .keys import *
 from pymongo import MongoClient
 from pymongo import ReturnDocument
 mongo = MongoClient()
