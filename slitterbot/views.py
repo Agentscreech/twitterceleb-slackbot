@@ -61,6 +61,7 @@ def add_twitter(request):
   if bot_check.count() == 0:
         db.bot_database.insert_one({'name':bot_name,'slack_token':request.GET['slack_token']})
         auth = tweepy.OAuthHandler(consumer_key, consumer_secret, "https://slitterbot.herokuapp.com/bot/add")
+        auth.secure = True
         try:
             redirect_url = auth.get_authorization_url()
         except tweepy.TweepError:
