@@ -11,8 +11,8 @@ from pymongo import ReturnDocument
 mongo = MongoClient('mongodb://dbuser:dbpassword@ds161069.mlab.com:61069/heroku_p8hztrhs')
 db = mongo.heroku_p8hztrhs
 
-# consumer_key = os.environ.get("TWITTER_CONSUMER_KEY")
-# consumer_secret = os.environ.get("TWITTER_CONSUMER_SECRET")
+consumer_key = os.environ.get("consumer_key")
+consumer_secret = os.environ.get("consumer_secret")
 # key = os.environ.get('TWITTER_ACCESS_TOKEN')
 # secret = os.environ.get('TWITTER_TOKEN_SECRET')
 # # auth.set_access_token(key, secret)

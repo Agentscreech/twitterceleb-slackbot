@@ -1,11 +1,13 @@
 from django.shortcuts import render, redirect
 from slitterbot.starterbot import *
 import json
+import os
 from pymongo import MongoClient
 from pymongo import ReturnDocument
 # from .twitter_auth import auth_twitter
 from django.http import *
-
+consumer_key = os.environ.get('consumer_key')
+consumer_secret = os.environ.get('consumer_secret')
 
 #mongodb stuff
 
